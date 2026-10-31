@@ -1,8 +1,11 @@
 
 import os
+import hmac
+from functools import wraps
+
 from dotenv import load_dotenv
 
-# Load environment variables from .env
+# Load environment variables before importing application modules.
 load_dotenv()
 
 from flask import (
@@ -33,13 +36,91 @@ from src.connectors.gmail_auth import (
 )
 
 
+# -------------------------
+# Flask configuration
+# -------------------------
+
 app = Flask(__name__)
 
-# Persistent session security
 app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=bool(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
+)
+
+DEMO_USERNAME = os.getenv("DEMO_USERNAME", "")
+DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "")
+
+
+# -------------------------
+# Authentication
+# -------------------------
+
+def login_required(function):
+    @wraps(function)
+    def decorated_function(*args, **kwargs):
+
+        if not session.get("authenticated"):
+            if request.path.startswith("/api/"):
+                return jsonify({
+                    "error": "Authentication required"
+                }), 401
+
+            return redirect("/login")
+
+        return function(*args, **kwargs)
+
+    return decorated_function
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if session.get("authenticated"):
+        return redirect("/")
+
+    if request.method == "POST":
+
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+
+        valid_username = (
+            bool(DEMO_USERNAME)
+            and hmac.compare_digest(username, DEMO_USERNAME)
+        )
+
+        valid_password = (
+            bool(DEMO_PASSWORD)
+            and hmac.compare_digest(password, DEMO_PASSWORD)
+        )
+
+        if valid_username and valid_password:
+            session.clear()
+            session["authenticated"] = True
+            return redirect("/")
+
+        return render_template(
+            "login.html",
+            error="Invalid username or password."
+        )
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+
+# -------------------------
+# Dashboard
+# -------------------------
 
 @app.route("/")
+@login_required
 def dashboard():
     return render_template("index.html")
 
@@ -53,6 +134,7 @@ def health():
 
 
 @app.route("/api/dashboard")
+@login_required
 def dashboard_api():
     return jsonify({
         "metrics": get_dashboard_metrics(),
@@ -63,7 +145,9 @@ def dashboard_api():
 
 
 @app.route("/api/ask", methods=["POST"])
+@login_required
 def ask():
+
     data = request.get_json(silent=True) or {}
     question = data.get("question", "").strip()
 
@@ -86,7 +170,9 @@ def ask():
 # -------------------------
 
 @app.route("/connect/gmail")
+@login_required
 def connect_gmail():
+
     try:
         authorization_url, state, code_verifier = get_authorization_url()
 
@@ -97,6 +183,7 @@ def connect_gmail():
 
     except Exception:
         app.logger.exception("Could not start Gmail OAuth")
+
         return jsonify({
             "error": "Could not start Gmail connection."
         }), 500
@@ -104,6 +191,7 @@ def connect_gmail():
 
 @app.route("/auth/google/callback")
 def google_callback():
+
     if request.args.get("error"):
         return jsonify({
             "error": "Google authorization was not completed.",
@@ -133,12 +221,14 @@ def google_callback():
 
     except Exception:
         app.logger.exception("Gmail OAuth callback failed")
+
         return jsonify({
-            "error": "Gmail authorization failed. Check the server terminal."
+            "error": "Gmail authorization failed. Check the server logs."
         }), 500
 
 
 @app.route("/api/gmail/status")
+@login_required
 def gmail_status():
     return jsonify({
         "connected": is_gmail_connected()
@@ -146,7 +236,9 @@ def gmail_status():
 
 
 @app.route("/api/gmail/profile")
+@login_required
 def gmail_profile():
+
     try:
         account = get_connected_account()
 
@@ -165,9 +257,10 @@ def gmail_profile():
 
 
 @app.route("/api/gmail/import", methods=["POST"])
+@login_required
 def gmail_import():
-    data = request.get_json(silent=True) or {}
 
+    data = request.get_json(silent=True) or {}
     query = data.get("query", "newer_than:90d")
 
     try:
@@ -186,9 +279,13 @@ def gmail_import():
 
         return jsonify({
             "success": False,
-            "error": "Gmail import failed. Check the server terminal."
+            "error": "Gmail import failed. Check the server logs."
         }), 500
 
+
+# -------------------------
+# Application entry point
+# -------------------------
 
 if __name__ == "__main__":
     app.run(

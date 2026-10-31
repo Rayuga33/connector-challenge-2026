@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EquipIntel | Organizer Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #10131c;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        .login-card {
+            width: 360px;
+            max-width: 90%;
+            padding: 36px;
+            background: #1b2030;
+            border: 1px solid #30384a;
+            border-radius: 14px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+
+        .brand {
+            font-size: 27px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #9ba6bd;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border: 1px solid #41495c;
+            border-radius: 7px;
+            background: #111622;
+            color: white;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #6487ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #5478ef;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #4165dc;
+        }
+
+        .error {
+            color: #ff7777;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            color: #727f98;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <form class="login-card" method="POST">
+
+        <div class="brand">EquipIntel</div>
+
+        <div class="subtitle">
+            Business Intelligence Platform
+            <br>
+            Organizer access
+        </div>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            autocomplete="username"
+            required
+        >
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+        >
+
+        <button type="submit">Sign In</button>
+
+        <div class="footer">
+            EquipIntel © 2026
+        </div>
+
+    </form>
+
+</body>
+</html>
