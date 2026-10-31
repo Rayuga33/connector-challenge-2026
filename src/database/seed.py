@@ -1,6 +1,6 @@
 import random
 from datetime import date, timedelta
-from src.database.db import get_connection
+from src.database.db import get_local_connection as get_connection
 
 random.seed(42)
 

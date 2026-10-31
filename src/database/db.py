@@ -1,12 +1,35 @@
-import sqlite3
+
 import os
+import sqlite3
 from pathlib import Path
+
+import psycopg
+from psycopg.rows import dict_row
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DB_PATH = BASE_DIR / "instance" / "equipintel.db"
 
 
 def get_connection():
+    """Connect to Supabase PostgreSQL."""
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL is missing from .env")
+
+    return psycopg.connect(
+        database_url,
+        row_factory=dict_row,
+        connect_timeout=10
+    )
+
+
+def get_local_connection():
+    """Connect to local SQLite for seeding and backup."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
@@ -17,7 +40,8 @@ def get_connection():
 
 
 def initialize_database():
-    conn = get_connection()
+    """Initialize the local SQLite database only."""
+    conn = get_local_connection()
 
     conn.executescript("""
     CREATE TABLE IF NOT EXISTS customers (
@@ -47,9 +71,7 @@ def initialize_database():
         equipment_id INTEGER,
         amount REAL NOT NULL,
         status TEXT DEFAULT 'pending',
-        quotation_date TEXT,
-        FOREIGN KEY(customer_id) REFERENCES customers(id),
-        FOREIGN KEY(equipment_id) REFERENCES equipment(id)
+        quotation_date TEXT
     );
 
     CREATE TABLE IF NOT EXISTS rentals (
@@ -59,9 +81,7 @@ def initialize_database():
         start_date TEXT,
         end_date TEXT,
         rental_amount REAL,
-        status TEXT DEFAULT 'active',
-        FOREIGN KEY(customer_id) REFERENCES customers(id),
-        FOREIGN KEY(equipment_id) REFERENCES equipment(id)
+        status TEXT DEFAULT 'active'
     );
 
     CREATE TABLE IF NOT EXISTS invoices (
@@ -71,9 +91,7 @@ def initialize_database():
         invoice_number TEXT UNIQUE,
         amount REAL NOT NULL,
         due_date TEXT,
-        status TEXT DEFAULT 'unpaid',
-        FOREIGN KEY(customer_id) REFERENCES customers(id),
-        FOREIGN KEY(rental_id) REFERENCES rentals(id)
+        status TEXT DEFAULT 'unpaid'
     );
 
     CREATE TABLE IF NOT EXISTS payments (
@@ -81,8 +99,7 @@ def initialize_database():
         invoice_id INTEGER,
         amount REAL NOT NULL,
         payment_date TEXT,
-        method TEXT,
-        FOREIGN KEY(invoice_id) REFERENCES invoices(id)
+        method TEXT
     );
 
     CREATE TABLE IF NOT EXISTS maintenance (
@@ -91,8 +108,7 @@ def initialize_database():
         description TEXT,
         maintenance_date TEXT,
         cost REAL DEFAULT 0,
-        status TEXT DEFAULT 'pending',
-        FOREIGN KEY(equipment_id) REFERENCES equipment(id)
+        status TEXT DEFAULT 'pending'
     );
 
     CREATE TABLE IF NOT EXISTS communications (
@@ -116,4 +132,4 @@ def initialize_database():
 
 if __name__ == "__main__":
     initialize_database()
-    print(f"EquipIntel database initialized: {DB_PATH}")
+    print(f"Local SQLite database initialized: {DB_PATH}")

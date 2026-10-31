@@ -1,7 +1,9 @@
+
 import os
-import secrets
-from src.connectors.gmail_service import get_connected_account
-from src.connectors.gmail_importer import import_gmail_messages
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 from flask import (
     Flask,
@@ -11,6 +13,9 @@ from flask import (
     redirect,
     session
 )
+
+from src.connectors.gmail_service import get_connected_account
+from src.connectors.gmail_importer import import_gmail_messages
 
 from src.services.analytics import (
     get_dashboard_metrics,
@@ -30,11 +35,8 @@ from src.connectors.gmail_auth import (
 
 app = Flask(__name__)
 
-# Local development session security
-app.secret_key = os.environ.get(
-    "FLASK_SECRET_KEY",
-    secrets.token_hex(32)
-)
+# Persistent session security
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 
 @app.route("/")
@@ -99,6 +101,7 @@ def connect_gmail():
             "error": "Could not start Gmail connection."
         }), 500
 
+
 @app.route("/auth/google/callback")
 def google_callback():
     if request.args.get("error"):
@@ -134,11 +137,13 @@ def google_callback():
             "error": "Gmail authorization failed. Check the server terminal."
         }), 500
 
+
 @app.route("/api/gmail/status")
 def gmail_status():
     return jsonify({
         "connected": is_gmail_connected()
     })
+
 
 @app.route("/api/gmail/profile")
 def gmail_profile():
@@ -158,14 +163,12 @@ def gmail_profile():
             "error": "Could not retrieve Gmail profile."
         }), 500
 
+
 @app.route("/api/gmail/import", methods=["POST"])
 def gmail_import():
     data = request.get_json(silent=True) or {}
 
-    query = data.get(
-        "query",
-        "newer_than:90d"
-    )
+    query = data.get("query", "newer_than:90d")
 
     try:
         result = import_gmail_messages(
@@ -185,6 +188,7 @@ def gmail_import():
             "success": False,
             "error": "Gmail import failed. Check the server terminal."
         }), 500
+
 
 if __name__ == "__main__":
     app.run(

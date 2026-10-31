@@ -1,18 +1,22 @@
+
+import os
 import base64
-import re
 from datetime import datetime, timezone
 from email.utils import parseaddr
 
+from dotenv import load_dotenv
 from src.connectors.gmail_service import get_gmail_service
 from src.database.db import get_connection
 
+load_dotenv()
+
+ORG_ID = "a94a6421-0db0-40f2-850a-7e6ba623eff0"
 
 DEFAULT_QUERY = "newer_than:90d"
 MAX_MESSAGES = 100
 
 
 def decode_body(payload):
-    """Extract readable plain-text email content."""
     parts = []
 
     def walk(part):
@@ -29,11 +33,6 @@ def decode_body(payload):
             walk(child)
 
     walk(payload)
-
-    if not parts:
-        snippet = ""
-        return snippet
-
     return "\n".join(parts).strip()
 
 
@@ -47,29 +46,28 @@ def get_header(headers, name):
 def classify_email(subject, content):
     text = f"{subject} {content}".lower()
 
-    sales_keywords = [
-        "quotation", "quote", "rental", "enquiry", "inquiry",
-        "purchase order", "po-", "invoice", "payment",
-        "excavator", "crane", "equipment", "availability"
-    ]
-
     marketing_keywords = [
         "newsletter", "special offer", "promotion",
         "register today", "exhibition", "webinar",
         "discount", "subscribe", "marketing"
     ]
 
-    if any(keyword in text for keyword in sales_keywords):
-        return "sales"
+    sales_keywords = [
+        "quotation", "quote", "rental", "enquiry",
+        "inquiry", "purchase order", "po-",
+        "excavator", "crane", "availability"
+    ]
 
     if any(keyword in text for keyword in marketing_keywords):
         return "marketing"
+
+    if any(keyword in text for keyword in sales_keywords):
+        return "sales"
 
     return "other"
 
 
 def import_gmail_messages(query=DEFAULT_QUERY, max_results=MAX_MESSAGES):
-    """Import matching Gmail messages into communications."""
     if not isinstance(query, str) or not query.strip():
         raise ValueError("A valid Gmail search query is required.")
 
@@ -90,44 +88,46 @@ def import_gmail_messages(query=DEFAULT_QUERY, max_results=MAX_MESSAGES):
     skipped = 0
 
     try:
-        for message_ref in messages:
-            message = service.users().messages().get(
-                userId="me",
-                id=message_ref["id"],
-                format="full"
-            ).execute()
+        with conn.cursor() as cur:
+            for message_ref in messages:
+                message = service.users().messages().get(
+                    userId="me",
+                    id=message_ref["id"],
+                    format="full"
+                ).execute()
 
-            payload = message.get("payload", {})
-            headers = payload.get("headers", [])
+                payload = message.get("payload", {})
+                headers = payload.get("headers", [])
 
-            sender_raw = get_header(headers, "From")
-            sender_name, sender_email = parseaddr(sender_raw)
+                sender_raw = get_header(headers, "From")
+                sender_name, sender_email = parseaddr(sender_raw)
 
-            subject = get_header(headers, "Subject") or "(No subject)"
+                subject = get_header(headers, "Subject") or "(No subject)"
 
-            timestamp = message.get("internalDate")
-            if timestamp:
-                email_date = datetime.fromtimestamp(
-                    int(timestamp) / 1000,
-                    tz=timezone.utc
-                ).isoformat()
-            else:
-                email_date = None
+                timestamp = message.get("internalDate")
+                email_date = (
+                    datetime.fromtimestamp(
+                        int(timestamp) / 1000,
+                        tz=timezone.utc
+                    )
+                    if timestamp else None
+                )
 
-            content = decode_body(payload)
+                content = decode_body(payload) or message.get("snippet", "")
+                category = classify_email(subject, content)
 
-            if not content:
-                content = message.get("snippet", "")
-
-            category = classify_email(subject, content)
-
-            cursor = conn.execute(
-                """
-                INSERT OR IGNORE INTO communications
-                (source, source_id, sender, subject, content, timestamp, category)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
+                cur.execute("""
+                    INSERT INTO communications
+                    (
+                        organization_id, source, source_id,
+                        sender, subject, content, timestamp, category
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (organization_id, source, source_id)
+                    DO NOTHING
+                    RETURNING id
+                """, (
+                    ORG_ID,
                     "gmail",
                     message["id"],
                     sender_email or sender_raw,
@@ -135,13 +135,12 @@ def import_gmail_messages(query=DEFAULT_QUERY, max_results=MAX_MESSAGES):
                     content,
                     email_date,
                     category
-                )
-            )
+                ))
 
-            if cursor.rowcount:
-                imported += 1
-            else:
-                skipped += 1
+                if cur.fetchone():
+                    imported += 1
+                else:
+                    skipped += 1
 
         conn.commit()
 
