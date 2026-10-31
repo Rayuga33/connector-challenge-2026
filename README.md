@@ -7,6 +7,18 @@ EquipIntel brings business data and communications into one place, helping renta
 **Live application:** https://connector-challenge-2026.onrender.com/  
 **GitHub repository:** https://github.com/Rayuga33/connector-challenge-2026
 
+## Demo Access
+
+The application is available for evaluation:
+
+**Live URL:** https://connector-challenge-2026.onrender.com/
+
+**Login credentials:**
+- Username: organizer
+- Password: Rayuga@33
+
+These credentials are configured for the hackathon evaluation environment.
+
 ## Overview
 
 Equipment rental businesses often manage information across multiple systems, including customer records, equipment inventories, rental contracts, invoices, payments, and communications.
