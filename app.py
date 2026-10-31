@@ -274,7 +274,7 @@ def gmail_import():
     try:
         result = import_gmail_messages(
             query=query,
-            max_results=100
+            max_results=10
         )
 
         return jsonify({
