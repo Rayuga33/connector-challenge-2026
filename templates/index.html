@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EquipIntel | Rental Intelligence</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="brand">⚙ EquipIntel</div>
+        <p class="sidebar-label">WORKSPACE</p>
+        <a class="nav active" href="/">▦ Overview</a>
+        <a class="nav" href="#fleet">◈ Fleet Intelligence</a>
+        <a class="nav" href="#sales">↗ Sales & Quotations</a>
+        <a class="nav" href="#finance">₹ Finance</a>
+        <a class="nav" href="#assistant">✧ AI Assistant</a>
+
+        <div class="sidebar-bottom">
+            <span class="status-dot"></span>
+            Demo environment
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">BUSINESS INTELLIGENCE</p>
+                <h1>Overview</h1>
+                <p class="muted">Your rental business, all in one place.</p>
+            </div>
+            <div class="top-right">
+                <span class="demo-tag">SYNTHETIC DATA</span>
+                <div class="avatar">EI</div>
+            </div>
+        </header>
+
+        <section class="section-heading">
+            <h2>Business performance</h2>
+            <span class="muted">All-time overview</span>
+        </section>
+
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <span>Total rental value</span>
+                <h2 id="rental-value">Loading...</h2>
+                <small>Recorded rental contracts</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Payments collected</span>
+                <h2 id="collected">Loading...</h2>
+                <small>Total recorded payments</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Outstanding balance</span>
+                <h2 id="outstanding">Loading...</h2>
+                <small>Unpaid invoice balances</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Fleet utilisation</span>
+                <h2 id="utilization">Loading...</h2>
+                <small>Equipment currently marked rented</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Active rentals</span>
+                <h2 id="active-rentals">Loading...</h2>
+                <small>Currently active contracts</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Pending quotations</span>
+                <h2 id="pending-quotes">Loading...</h2>
+                <small>Awaiting a decision</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Overdue invoices</span>
+                <h2 id="overdue">Loading...</h2>
+                <small>Unpaid past-due invoices</small>
+            </div>
+
+            <div class="metric-card">
+                <span>Total equipment</span>
+                <h2 id="equipment-count">Loading...</h2>
+                <small>Registered fleet assets</small>
+            </div>
+        </section>
+
+        <section class="charts-grid">
+            <div class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Rental contract value</h3>
+                        <p class="muted">By rental start month</p>
+                    </div>
+                </div>
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <div class="panel" id="fleet">
+                <div class="panel-heading">
+                    <div>
+                        <h3>Fleet composition</h3>
+                        <p class="muted">Equipment by category</p>
+                    </div>
+                </div>
+                <canvas id="fleetChart"></canvas>
+            </div>
+        </section>
+
+        <section class="bottom-grid">
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3>Top performing equipment</h3>
+                </div>
+                <div id="equipment-list"></div>
+            </div>
+
+            <div class="panel" id="sales">
+                <div class="panel-heading">
+                    <h3>Business alerts</h3>
+                </div>
+                <div class="alert-item">
+                    <span class="alert-icon">₹</span>
+                    <div>
+                        <strong id="alert-outstanding">Loading...</strong>
+                        <p>Outstanding invoice balance</p>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <span class="alert-icon">!</span>
+                    <div>
+                        <strong id="alert-overdue">Loading...</strong>
+                        <p>Overdue invoices</p>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <span class="alert-icon">↗</span>
+                    <div>
+                        <strong id="alert-quotes">Loading...</strong>
+                        <p>Pending quotations</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="panel assistant-panel" id="assistant">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">EQUIPINTEL INTELLIGENCE</p>
+                    <h2>Ask your business anything.</h2>
+                    <p class="muted">Explore your rental business data.</p>
+                </div>
+                <span class="ai-badge">✧ AI ASSISTANT</span>
+            </div>
+
+            <div class="suggestions">
+                <button onclick="askQuestion('What is our total outstanding balance?')">
+                    What is our outstanding balance?
+                </button>
+                <button onclick="askQuestion('Which equipment generates the most rental value?')">
+                    Top performing equipment?
+                </button>
+                <button onclick="askQuestion('How many rentals are currently active?')">
+                    How many active rentals?
+                </button>
+            </div>
+
+            <div class="chat-input">
+                <input id="question" placeholder="Ask about revenue, equipment, rentals...">
+                <button id="ask-button" onclick="askQuestion()">Ask →</button>
+            </div>
+
+            <div id="answer" class="answer" aria-live="polite"></div>
+            <div id="sources" class="sources"></div>
+        </section>
+
+        <footer>
+            EquipIntel · Heavy Equipment Rental Intelligence · Synthetic demo data
+        </footer>
+
+    </main>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

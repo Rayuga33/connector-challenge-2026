@@ -1,0 +1,23 @@
+# Secrets and credentials
+.env
+credentials.json
+client_secret*.json
+token.json
+*.token
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local database and runtime files
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Logs and editor files
+*.log
+.vscode/
+.DS_Store
