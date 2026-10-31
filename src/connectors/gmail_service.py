@@ -1,9 +1,10 @@
+
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
 from src.connectors.gmail_auth import (
     get_gmail_credentials,
-    TOKEN_FILE
+    save_gmail_credentials
 )
 
 
@@ -11,19 +12,18 @@ def get_gmail_service():
     credentials = get_gmail_credentials()
 
     if credentials is None:
-        raise Exception("Gmail is not connected. Please authorize first.")
-
-    # Refresh expired credentials when possible
-    if credentials.expired and credentials.refresh_token:
-        credentials.refresh(Request())
-
-        TOKEN_FILE.write_text(
-            credentials.to_json(),
-            encoding="utf-8"
+        raise Exception(
+            "Gmail is not connected. Please authorize first."
         )
 
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(Request())
+        save_gmail_credentials(credentials)
+
     if not credentials.valid:
-        raise Exception("Gmail authorization is expired. Please reconnect.")
+        raise Exception(
+            "Gmail authorization is expired. Please reconnect."
+        )
 
     return build(
         "gmail",

@@ -32,7 +32,8 @@ from src.services.query_engine import answer_question
 from src.connectors.gmail_auth import (
     get_authorization_url,
     complete_oauth,
-    is_gmail_connected
+    is_gmail_connected,
+    REDIRECT_URI
 )
 
 
@@ -207,9 +208,15 @@ def google_callback():
         }), 400
 
     try:
+        callback_url = (
+            REDIRECT_URI
+            + "?"
+            + request.query_string.decode("utf-8")
+        )
+
         complete_oauth(
             state=state,
-            authorization_response=request.url,
+            authorization_response=callback_url,
             code_verifier=code_verifier
         )
 
@@ -230,6 +237,7 @@ def google_callback():
 @app.route("/api/gmail/status")
 @login_required
 def gmail_status():
+
     return jsonify({
         "connected": is_gmail_connected()
     })
