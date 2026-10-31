@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +7,147 @@
     <title>EquipIntel | Rental Intelligence</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .gmail-panel {
+            margin: 24px 0;
+            padding: 24px;
+            border: 1px solid #34445e;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #17243a, #111c2d);
+        }
+
+        .gmail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .gmail-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gmail-icon {
+            font-size: 28px;
+        }
+
+        .gmail-title h3 {
+            margin: 0 0 5px;
+        }
+
+        .gmail-title p {
+            margin: 0;
+        }
+
+        .gmail-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #27364a;
+            font-size: 12px;
+        }
+
+        .gmail-status.connected {
+            color: #45d6a0;
+            background: #15372f;
+        }
+
+        .gmail-status.disconnected {
+            color: #f2b75a;
+            background: #44351f;
+        }
+
+        .gmail-status.error {
+            color: #ff8585;
+            background: #442727;
+        }
+
+        .gmail-account {
+            margin: 15px 0;
+            color: #e3ebf7;
+            font-size: 15px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .gmail-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .gmail-stat {
+            padding: 15px;
+            border-radius: 10px;
+            background: #1d2b40;
+        }
+
+        .gmail-stat strong {
+            display: block;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .gmail-stat span {
+            color: #a9b8cc;
+            font-size: 12px;
+        }
+
+        .gmail-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .gmail-button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 17px;
+            cursor: pointer;
+            font-weight: 600;
+            background: #4b91e8;
+            color: white;
+        }
+
+        .gmail-button.secondary {
+            background: #2b3c55;
+            color: #dce8f8;
+        }
+
+        .gmail-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .gmail-note {
+            color: #9babc0;
+            font-size: 12px;
+            margin-top: 17px;
+            line-height: 1.6;
+        }
+
+        .gmail-message {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #a9b8cc;
+        }
+
+        @media (max-width: 600px) {
+            .gmail-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
 <div class="layout">
@@ -18,11 +159,13 @@
         <a class="nav" href="#fleet">◈ Fleet Intelligence</a>
         <a class="nav" href="#sales">↗ Sales & Quotations</a>
         <a class="nav" href="#finance">₹ Finance</a>
+        <a class="nav" href="#gmail">✉ Gmail Integration</a>
         <a class="nav" href="#assistant">✧ AI Assistant</a>
 
         <div class="sidebar-bottom">
             <span class="status-dot"></span>
             Demo environment
+            <p><a href="/logout">Logout</a></p>
         </div>
     </aside>
 
@@ -46,6 +189,7 @@
         </section>
 
         <section class="metrics-grid">
+
             <div class="metric-card">
                 <span>Total rental value</span>
                 <h2 id="rental-value">Loading...</h2>
@@ -93,9 +237,106 @@
                 <h2 id="equipment-count">Loading...</h2>
                 <small>Registered fleet assets</small>
             </div>
+
+        </section>
+
+        <!-- GMAIL CONNECTOR -->
+        <section class="gmail-panel" id="gmail">
+
+            <div class="gmail-header">
+
+                <div class="gmail-title">
+                    <span class="gmail-icon">✉</span>
+                    <div>
+                        <h3>Gmail Integration</h3>
+                        <p class="muted">Connect business email with EquipIntel</p>
+                    </div>
+                </div>
+
+                <span class="gmail-status" id="gmail-status">
+                    Checking connection...
+                </span>
+
+            </div>
+
+            <div id="gmail-disconnected" hidden>
+
+                <p class="muted">
+                    Connect your Gmail account to bring business
+                    communications into EquipIntel.
+                </p>
+
+                <div class="gmail-actions">
+                    <a href="/connect/gmail"
+                       class="gmail-button"
+                       style="text-decoration:none;">
+                        Connect Gmail →
+                    </a>
+                </div>
+
+            </div>
+
+            <div id="gmail-connected" hidden>
+
+                <div class="gmail-account" id="gmail-account">
+                    Loading account...
+                </div>
+
+                <div class="gmail-stats">
+
+                    <div class="gmail-stat">
+                        <strong id="gmail-messages">—</strong>
+                        <span>Total mailbox messages</span>
+                    </div>
+
+                    <div class="gmail-stat">
+                        <strong id="gmail-threads">—</strong>
+                        <span>Total email threads</span>
+                    </div>
+
+                </div>
+
+                <div class="gmail-actions">
+
+                    <button class="gmail-button secondary"
+                            id="gmail-refresh"
+                            onclick="refreshGmailStatus()">
+                        ↻ Refresh status
+                    </button>
+
+                    <button class="gmail-button secondary" disabled>
+                        Email import optimization pending
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div id="gmail-error" hidden>
+                <p class="gmail-message">
+                    Unable to retrieve Gmail connection details.
+                </p>
+                <button class="gmail-button secondary"
+                        onclick="refreshGmailStatus()">
+                    Try again
+                </button>
+            </div>
+
+            <div class="gmail-note">
+                Gmail API · Read-only OAuth permission ·
+                Encrypted persistent token storage.
+                <br>
+                Bulk email importing is temporarily paused while
+                resource usage is optimized for the hosting environment.
+            </div>
+
+            <div id="gmail-message" class="gmail-message"
+                 aria-live="polite"></div>
+
         </section>
 
         <section class="charts-grid">
+
             <div class="panel">
                 <div class="panel-heading">
                     <div>
@@ -115,6 +356,7 @@
                 </div>
                 <canvas id="fleetChart"></canvas>
             </div>
+
         </section>
 
         <section class="bottom-grid">
@@ -130,6 +372,7 @@
                 <div class="panel-heading">
                     <h3>Business alerts</h3>
                 </div>
+
                 <div class="alert-item">
                     <span class="alert-icon">₹</span>
                     <div>
@@ -137,6 +380,7 @@
                         <p>Outstanding invoice balance</p>
                     </div>
                 </div>
+
                 <div class="alert-item">
                     <span class="alert-icon">!</span>
                     <div>
@@ -144,6 +388,7 @@
                         <p>Overdue invoices</p>
                     </div>
                 </div>
+
                 <div class="alert-item">
                     <span class="alert-icon">↗</span>
                     <div>
@@ -156,43 +401,61 @@
         </section>
 
         <section class="panel assistant-panel" id="assistant">
+
             <div class="panel-heading">
                 <div>
                     <p class="eyebrow">EQUIPINTEL INTELLIGENCE</p>
                     <h2>Ask your business anything.</h2>
-                    <p class="muted">Explore your rental business data.</p>
+                    <p class="muted">
+                        Explore your rental business data.
+                    </p>
                 </div>
+
                 <span class="ai-badge">✧ AI ASSISTANT</span>
             </div>
 
             <div class="suggestions">
+
                 <button onclick="askQuestion('What is our total outstanding balance?')">
                     What is our outstanding balance?
                 </button>
+
                 <button onclick="askQuestion('Which equipment generates the most rental value?')">
                     Top performing equipment?
                 </button>
+
                 <button onclick="askQuestion('How many rentals are currently active?')">
                     How many active rentals?
                 </button>
+
             </div>
 
             <div class="chat-input">
-                <input id="question" placeholder="Ask about revenue, equipment, rentals...">
-                <button id="ask-button" onclick="askQuestion()">Ask →</button>
+                <input id="question"
+                       placeholder="Ask about revenue, equipment, rentals...">
+
+                <button id="ask-button"
+                        onclick="askQuestion()">
+                    Ask →
+                </button>
             </div>
 
-            <div id="answer" class="answer" aria-live="polite"></div>
+            <div id="answer" class="answer"
+                 aria-live="polite"></div>
+
             <div id="sources" class="sources"></div>
+
         </section>
 
         <footer>
-            EquipIntel · Heavy Equipment Rental Intelligence · Synthetic demo data
+            EquipIntel · Heavy Equipment Rental Intelligence ·
+            Synthetic demo business data
         </footer>
 
     </main>
 </div>
 
 <script src="/static/js/dashboard.js"></script>
+
 </body>
 </html>
